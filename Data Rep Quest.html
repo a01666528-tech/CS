@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Data Rep Quest</title>
+<style>
+:root{--bg:#fff;--fg:#3c3c3c;--mut:#777;--line:#e5e5e5;--card:#fff;--g:#58cc02;--gd:#58a700;--r:#ff4b4b;--rd:#ea2b2b;--b:#1cb0f6;--bd:#1899d6;--y:#ffc800;--gbg:#d7ffb8;--rbg:#ffdfe0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131f24;--fg:#f1f7fb;--mut:#8ea0aa;--line:#37464f;--card:#1b2b33;--gbg:#1d3a14;--rbg:#4a1f22}}
+:root[data-theme="dark"]{--bg:#131f24;--fg:#f1f7fb;--mut:#8ea0aa;--line:#37464f;--card:#1b2b33;--gbg:#1d3a14;--rbg:#4a1f22}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:700 17px/1.4 "Nunito","Trebuchet MS",system-ui,sans-serif;min-height:100vh}
+#app{max-width:640px;margin:0 auto;padding:16px 16px 140px}
+.top{display:flex;gap:14px;justify-content:flex-end;font-size:18px;margin-bottom:8px}
+h1{margin:6px 0 4px;font-size:28px}.sub{color:var(--mut);font-weight:600;margin:0 0 20px}
+.unit{border-radius:16px;padding:16px;color:#fff;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:center}
+.unit small{display:block;opacity:.85;font-weight:600}
+.path{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px}
+.node{width:84px;height:84px;border-radius:50%;border:0;font-size:36px;color:#fff;cursor:pointer;box-shadow:0 8px 0 rgba(0,0,0,.22);transition:transform .1s}
+.node:active{transform:translateY(5px);box-shadow:0 3px 0 rgba(0,0,0,.22)}
+.stars{font-size:18px;letter-spacing:2px;margin-bottom:10px;min-height:24px}
+.btn{border:0;border-radius:14px;padding:14px 22px;font:800 16px inherit;font-family:inherit;text-transform:uppercase;letter-spacing:.8px;color:#fff;background:var(--g);box-shadow:0 4px 0 var(--gd);cursor:pointer;width:100%}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--gd)}
+.btn:disabled{background:var(--line);color:var(--mut);box-shadow:none;cursor:default}
+.btn.red{background:var(--r);box-shadow:0 4px 0 var(--rd)}.btn.blue{background:var(--b);box-shadow:0 4px 0 var(--bd)}
+.bar{display:flex;align-items:center;gap:14px;margin:6px 0 28px}
+.x{background:none;border:0;font-size:26px;color:var(--mut);cursor:pointer}
+.prog{flex:1;height:16px;background:var(--line);border-radius:8px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--g);border-radius:8px;transition:width .3s}
+.q{font-size:24px;margin:0 0 22px;line-height:1.3}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--fg);border:2px solid var(--line);border-bottom-width:4px;border-radius:14px;padding:14px 16px;margin-bottom:12px;font:700 17px inherit;font-family:inherit;cursor:pointer}
+.opt.sel{border-color:var(--b);background:rgba(28,176,246,.12);color:var(--b)}
+.opt.ok{border-color:var(--g);background:var(--gbg)}.opt.bad{border-color:var(--r);background:var(--rbg)}
+.tiles{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.tiles .opt{width:auto;margin:0}
+.blank{display:inline-block;min-width:110px;border-bottom:3px solid var(--line);text-align:center;color:var(--b);padding:0 8px}
+input.t{width:100%;font:700 20px inherit;font-family:ui-monospace,Menlo,monospace;padding:14px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--fg);outline:none}
+input.t:focus{border-color:var(--b)}
+.foot{position:fixed;left:0;right:0;bottom:0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));border-top:2px solid var(--line);background:var(--bg)}
+.foot>div{max-width:640px;margin:0 auto}
+.foot.ok{background:var(--gbg)}.foot.bad{background:var(--rbg)}
+.fb{margin-bottom:12px;font-weight:600;font-size:15px}.fb b{display:block;font-size:20px}
+.foot.ok .fb b{color:var(--gd)}.foot.bad .fb b{color:var(--rd)}
+.end{text-align:center;padding-top:30px}.end .big{font-size:80px}
+.stats{display:flex;gap:12px;justify-content:center;margin:24px 0}
+.stat{border:2px solid var(--line);border-radius:14px;padding:10px 20px;min-width:110px}.stat b{display:block;font-size:24px}
+.tag{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:1px}
+</style></head><body><div id="app"></div>
+<script>
+// ---- Question bank (from the Kognity Topic 1 document) ----
+const M=(q,a,w,e)=>({t:'m',q,o:[a,...w],a,e});
+const F=(q,a,w,e)=>({t:'f',q,o:[a,...w],a,e});
+const T=(q,acc,e,num)=>({t:'t',q,acc:[].concat(acc),e,num});
+const UNITS=[
+{name:'Number systems',c:'#58cc02',icon:'🔢',qs:[
+F('A ___ is a high-speed area of memory located within the CPU.','register',['cache','buffer','hard drive'],'A register is a small, ultra-high-speed area of memory within the CPU, used to temporarily store data during the fetch–decode–execute cycle.'),
+T('Convert −11 into 8-bit two’s complement.','11110101','Start with 11 = 00001011, complement it → 11110100, then add 1 → 11110101.'),
+T('Convert the positive denary integer 76 into 8-bit two’s complement.','01001100','Positive numbers are straightforward – just remember to use all eight bits.'),
+T('Perform a 2-bit logical right shift on 00110001.','00001100','In a logical right shift, bits shifted off the right end are lost and zeros are added at the left.'),
+T('Perform a 1-bit logical left shift on 00110001.','01100010','Bits shifted off the left end are lost and a zero is added at the right end.'),
+F('The ___ number system is the human readable number system, which consists of 10 digits.','denary',['binary','hexadecimal','octal'],'Denary (base 10) is the number system humans use every day.'),
+M('What would happen if the system tried to store a denary value greater than 255 in an 8-bit register?','Overflow error',['Underflow error','Rounding error','Nothing, it stores it fine'],'Overflow errors occur when a system tries to store a value one bit larger than a register’s capacity, which might cause the system to crash.'),
+T('What is the result of adding 10101010 to 00110011 in binary?','11011101','Add column by column from the right, carrying 1s: 10101010 + 00110011 = 11011101.'),
+M('One example of hexadecimal usage is…','Displaying error messages',['Machine code programming','High-level language programming','Designing presentation files'],'Hex is used to show things like error messages and memory addresses in a compact form.'),
+M('Which of the following is a benefit of using hexadecimal instead of binary?','Shorter representation on the screen',['Uses less memory space','Faster program execution','Faster data transmission'],'Hex is easier for humans to read and shorter to display; the computer still stores binary.'),
+F('An overflow error will most likely cause the computer system to ___.','crash',['speed up','delete files','restart the internet'],'Overflow occurs when a register is given a value one bit larger than its capacity, which might cause the system to crash.')]},
+{name:'Text, sound & images',c:'#1cb0f6',icon:'🎧',qs:[
+F('All image file types, such as .jpg and .gif, use different ___ methods to store image data as binary.','encoding',['printing','typing','scanning'],'.jpg, .png and .gif all use different encoding methods, but all store image data as binary.'),
+F('In the physical world, sounds are ___ waves that are constantly changing.','analogue',['digital','discrete','binary'],'Data from the physical world is continuously variable and changes in a smooth curve.'),
+F('Emojis can be represented using the ___ character set.','Unicode',['ASCII','Denary','Hex-only'],'ASCII represents English characters, but Unicode can represent every character in every language, including emojis.'),
+M('Which of the following file types is an example of a sound file?','.mp3',['.jpg','.png','.gif'],'.mp3 stores sound; .jpg, .png and .gif store images.'),
+F('The number of characters that can be represented using ASCII is ___.','128',['64','256','1024'],'ASCII uses 7 bits, so 2⁷ = 128 characters.'),
+T('A is stored as 01000001 (65). What is the denary number of ‘B’?','66','A is 65, so B is 66.',true),
+T('How many bits are needed to store the phrase ‘I love computer’?','120','8 bits × 15 characters (including spaces) = 120 bits.',true),
+M('What does ASCII stand for?','American Standard Code for Information Interchange',['Advanced Symbol Code for Internal Integration','American Standard Compression for Images','Automatic System Code for Information Input'],'ASCII = American Standard Code for Information Interchange.'),
+F('The higher the colour depth and resolution, the more data has to be stored. Increasing either will ___ the file size.','increase',['decrease','not change','halve'],'More bits per pixel or more pixels means more data to store.'),
+T('How many bits are needed to represent 512 colours in an image?','9','log₂(512) = 9.',true),
+M('In images, what is the number of bits per pixel called?','Colour depth',['Resolution','Sample rate','Bit rate'],'Colour depth is how many bits store the colour of each pixel.'),
+T('Pixel colours can be written in hex. What is the hex value for black?','000000','Black is 000000; white is FFFFFF.'),
+T('What is the hex value for white?','FFFFFF','White is the maximum value for each colour channel: FFFFFF.'),
+M('What is being described if a picture is said to be 1080 × 720?','Resolution',['Colour depth','Sample rate','File format'],'Image resolution is the number of pixels, normally given as width × height.'),
+F('The higher the sample rate and sample resolution, the more ___ the sound will be, but the file will be much larger.','accurate',['quiet','compressed','analogue'],'More samples and more bits per sample capture the wave more accurately but need more storage.'),
+M('The more bits that are used to measure the analogue wave, the…','More accurate the sound, and the bigger the file size will be',['Less accurate the sound, and the smaller the file size','More accurate the sound, and the smaller the file size','Louder the sound'],'More bits per measurement = better accuracy and larger files.'),
+M('The number of bits used to record each measurement during sampling is called…','Sample resolution',['Sample rate','Colour depth','Bandwidth'],'Sample resolution is bits per sample; sample rate is samples per second.'),
+M('Digital sounds used by computers are made up of which of the following?','Discrete signals',['Continuous waves','Analogue curves','Smooth gradients'],'Digital sound is a sequence of discrete signals that gives the illusion of a constantly changing sound.'),
+F('The ASCII character set was replaced by ___ to fully encompass the languages and alphabets of the world.','Unicode',['Hex','Binary','JPEG'],'Unicode can represent every character in every language.')]},
+{name:'Storage & compression',c:'#ce82ff',icon:'🗜️',qs:[
+F('Two drawbacks of lossless compression compared to lossy are a ___ file size and slower transmission speed.','larger',['smaller','lower-quality','encrypted'],'Lossless files are larger so they transmit more slowly.'),
+M('Which does NOT describe how lossy compression reduces the size of a sound file?','Data will not be removed',['Some data is permanently removed','Quieter sounds may be discarded','Sample resolution may be lowered'],'Lossy compression permanently removes some data from the original file.'),
+T('Name the lossless compression technique that encodes ‘runs’ of the same data as a value and a number of repetitions.',['run length encoding','rle','run-length encoding'],'Run-length encoding (RLE) records repeating data once, along with how many times it repeated.'),
+F('In ___ compression, data will not be lost. Once uncompressed, the file is exactly the same as the original.','lossless',['lossy','raw','analogue'],'Lossless keeps all the data but stores it differently.'),
+M('What is the effect of compressing a movie file using lossy compression?','Decreased file size and quality',['Increased file size and quality','Decreased file size, same quality','Increased file size, lower quality'],'Lossy removes data permanently: smaller files, lower quality.'),
+M('Which does NOT describe how lossless compression reduces the size of a sound file?','Discards any unnecessary sounds',['Uses an algorithm to store data differently','Original is recovered exactly on decompression','Finds repeating patterns'],'Lossless never loses data; it just stores it differently.'),
+F('Most compressed files are either ___, which loses some data, or lossless, which retains all of it.','lossy',['raw','digital','analogue'],'Lossy loses some data; lossless retains all data but stores it differently.'),
+F('Files that have had no compression applied are called ___ files.','raw',['lossy','lossless','binary'],'Uncompressed files are called raw files.'),
+F('Compression is normally used for three file types: sound files, ___ files and video files.','image',['text','database','program'],'Sound, image and video files are the usual candidates.'),
+M('Which of the following is NOT a benefit of file compression?','Reducing the file quality',['Saving storage space','Faster data transmission','Using less bandwidth'],'Quality loss can be a side effect, but it isn’t an aim of compression.'),
+F('A compression ___ is a simple set of instructions applied to a file to reduce its size.','algorithm',['protocol','register','encoding key'],'Compression algorithms define how data is shrunk.'),
+M('Which of the following is an aim of file compression?','Save storage space',['Increase file size','Improve image quality','Add more colours'],'Compression reduces logical file size to save space and improve processing time.'),
+T('A USB drive has 16 GiB free. Approximately how many 128 KiB photos could it hold?','131072','16 × 1024 × 1024 ÷ 128 = 131,072.',true),
+T('File size of a 3 minute sound file, 44.1 kHz sample rate, 8-bit resolution, in KiB? (2 d.p.)','7751.95','3 × 60 × 44100 × 8 ÷ 8 ÷ 1024 ≈ 7751.95 KiB.',true),
+T('File size of a 50 second sound file, 44.1 kHz, 8-bit, in KiB? (nearest whole number)','2153','50 × 44100 × 8 ÷ 8 ÷ 1024 ≈ 2153 KiB.',true),
+T('File size of a 2048 × 720 image with 256 colours, in MiB? (2 d.p.)','1.41','256 colours = 8 bits. 2048 × 720 × 8 ÷ 8 ÷ 1024 ÷ 1024 ≈ 1.406 MiB.',true),
+M('Which file will most likely have the largest file size?','1 hour of a movie file',['10 pages of a text file','1 hour of a music file','10 pages of programming code'],'Video combines lots of images and sound, so it is by far the largest.'),
+T('1 GiB = 2^x bytes. What is x?','30','1 GiB = 1024³ = 2³⁰ bytes.',true)]}];
+
+// ---- State ----
+const $=document.getElementById('app');
+let S={xp:0,best:{},streak:0,last:''};
+try{const s=localStorage.getItem('drq');if(s)S=Object.assign(S,JSON.parse(s))}catch(e){}
+const save=()=>{try{localStorage.setItem('drq',JSON.stringify(S))}catch(e){}};
+const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+let L=null;
+
+function home(){
+ $.innerHTML=`<div class="top"><span>🔥 ${S.streak}</span><span>⚡ ${S.xp} XP</span></div>
+ <h1>Data Rep Quest</h1><p class="sub">Topic 1: Data Representation. Answer correctly, keep your hearts, earn XP.</p>`+
+ UNITS.map((u,i)=>{const s=S.best[i]||0;return`<div class="unit" style="background:${u.c}"><div>Unit ${i+1}<small>${u.name}</small></div><div>${u.qs.length} Qs</div></div>
+ <div class="path"><button class="node" style="background:${u.c}" onclick="start(${i})" aria-label="Start ${u.name}">${u.icon}</button>
+ <div class="stars">${'⭐'.repeat(s)}${'☆'.repeat(3-s)}</div></div>`}).join('');
+}
+function start(i){L={u:i,q:sh(UNITS[i].qs).map(q=>({...q,o:q.o&&sh(q.o)})),n:UNITS[i].qs.length,h:5,done:0,miss:0,xp:0,sel:null,chk:false};ask()}
+function bar(){return`<div class="bar"><button class="x" onclick="quit()" aria-label="Quit">✕</button><div class="prog"><i style="width:${L.done/L.n*100}%"></i></div><span style="color:var(--r)">❤️ ${L.h}</span></div>`}
+function ask(){
+ const q=L.q[0];L.sel=null;L.chk=false;let b=bar();
+ if(q.t==='m')b+=`<h2 class="q">${q.q}</h2>`+q.o.map((o,i)=>`<button class="opt" onclick="pick(${i})">${o}</button>`).join('');
+ if(q.t==='f')b+=`<h2 class="q">Fill in the blank</h2><p class="q" style="font-weight:600">${q.q.replace('___','<span class="blank" id="bl">&nbsp;</span>')}</p><div class="tiles">`+q.o.map((o,i)=>`<button class="opt" onclick="pick(${i})">${o}</button>`).join('')+'</div>';
+ if(q.t==='t')b+=`<h2 class="q">${q.q}</h2><input class="t" id="in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer" oninput="L.sel=this.value.trim();document.getElementById('go').disabled=!L.sel" onkeydown="if(event.key==='Enter')act()">`;
+ $.innerHTML=b+`<div class="foot" id="ft"><div><button class="btn" id="go" disabled onclick="act()">Check</button></div></div>`;
+ if(q.t==='t')document.getElementById('in').focus();
+}
+function pick(i){if(L.chk)return;L.sel=i;const q=L.q[0];
+ document.querySelectorAll('.opt').forEach((e,j)=>e.classList.toggle('sel',j===i));
+ if(q.t==='f')document.getElementById('bl').textContent=q.o[i];
+ document.getElementById('go').disabled=false}
+const norm=s=>String(s).toLowerCase().replace(/[\s,'’_]/g,'');
+function correct(q){
+ if(q.t==='t'){
+  if(norm(L.sel)===norm(q.acc[0])||q.acc.some(a=>norm(a)===norm(L.sel)))return true;
+  if(q.num){const n=parseFloat(String(L.sel).replace(/,/g,'').replace(/[^\d.]/g,''));const t=parseFloat(q.acc[0]);return !isNaN(n)&&Math.abs(n-t)<=Math.max(.011,t*0.0005)}
+  return false}
+ return q.o[L.sel]===q.a}
+function act(){
+ if(L.chk){return next()}
+ if(L.sel===null||L.sel==='')return;
+ const q=L.q[0],ok=correct(q);L.chk=true;
+ const ans=q.t==='t'?q.acc[0]:q.a;
+ if(q.t!=='t')document.querySelectorAll('.opt').forEach((e,j)=>{e.disabled=true;if(q.o[j]===q.a)e.classList.add('ok');else if(j===L.sel)e.classList.add('bad')});
+ else document.getElementById('in').disabled=true;
+ if(ok){if(!q.again)L.xp+=10;L.q.shift();L.done++}
+ else{L.h--;L.miss++;q.again=true;L.q.push(L.q.shift())}
+ const f=document.getElementById('ft');f.className='foot '+(ok?'ok':'bad');
+ f.innerHTML=`<div><div class="fb"><b>${ok?['Nice!','Correct!','Great job!','Spot on!'][Math.random()*4|0]:'Not quite'}</b>${ok?'':'Answer: '+ans+'<br>'}${q.e}</div><button class="btn ${ok?'':'red'}" id="go" onclick="act()">Continue</button></div>`;
+}
+function next(){if(L.h<=0)return fail();if(!L.q.length)return win();ask()}
+function fail(){$.innerHTML=`<div class="end"><div class="big">💔</div><h1>Out of hearts</h1><p class="sub">Review the explanations and try again – you’ve got this.</p><button class="btn blue" onclick="start(${L.u})">Try again</button><br><br><button class="btn" style="background:var(--line);color:var(--fg);box-shadow:none" onclick="home()">Back to path</button></div>`}
+function win(){
+ const st=L.miss===0?3:L.miss<=3?2:1,u=L.u;S.xp+=L.xp;S.best[u]=Math.max(S.best[u]||0,st);
+ const d=new Date().toDateString();if(S.last!==d){S.streak=(S.last===new Date(Date.now()-864e5).toDateString())?S.streak+1:1;S.last=d}save();
+ $.innerHTML=`<div class="end"><div class="big">🎉</div><h1>Lesson complete!</h1><div class="stars" style="font-size:36px">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div>
+ <div class="stats"><div class="stat"><span class="tag">XP</span><b style="color:var(--y)">+${L.xp}</b></div><div class="stat"><span class="tag">Mistakes</span><b style="color:var(--r)">${L.miss}</b></div><div class="stat"><span class="tag">Hearts</span><b>${L.h}</b></div></div>
+ <button class="btn" onclick="home()">Continue</button></div>`}
+function quit(){if(confirm('Quit this lesson? Progress will be lost.'))home()}
+home();
+</script></body></html>
